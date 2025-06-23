@@ -447,7 +447,15 @@
                     body: JSON.stringify(formData),
                 });
 
-                const result = await response.json();
+                // Check if the response itself indicates an HTTP error (e.g., 404, 500)
+                if (!response.ok) {
+                    const errorText = await response.text(); // Get response body as text
+                    console.error('HTTP Error:', response.status, response.statusText, errorText);
+                    showMessage(`Submission failed: Server responded with ${response.status} ${response.statusText}`, 'error');
+                    return; // Stop further processing
+                }
+
+                const result = await response.json(); // Attempt to parse JSON
 
                 if (result.status === 'success') {
                     showMessage('Order submitted successfully!', 'success');
@@ -455,11 +463,14 @@
                     updateTshirtOrderFields(); // Reset dynamic fields and totals
                     updateBottleOrderFields();
                 } else {
+                    // Apps Script might return a success HTTP status but with a custom error status in JSON
                     showMessage('Submission failed: ' + (result.message || 'Unknown error'), 'error');
+                    console.error('Apps Script reported an error:', result.message);
                 }
             } catch (error) {
-                showMessage('An error occurred during submission. Please try again.', 'error');
-                console.error('Submission error:', error);
+                // This catch handles network errors or issues with parsing the response as JSON
+                showMessage('An error occurred during submission. Please check your internet and console.', 'error');
+                console.error('Network or parsing error during submission:', error);
             }
         });
     </script>
