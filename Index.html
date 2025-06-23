@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-Shirt Order Form</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for a clean look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Ensure it takes full viewport height */
+            padding: 20px; /* Add some padding around the form */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+        /* Custom styles for better aesthetics */
+        .form-container {
+            background-color: #ffffff;
+            padding: 2.5rem; /* Increase padding */
+            border-radius: 1rem; /* More rounded corners */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* Deeper shadow */
+            max-width: 500px; /* Max width for readability */
+            width: 100%;
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem; /* More padding for inputs */
+            border: 1px solid #d1d5db; /* Light gray border */
+            border-radius: 0.5rem; /* Rounded input corners */
+            font-size: 1rem;
+            color: #374151; /* Darker text */
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue border on focus */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); /* Light blue shadow on focus */
+        }
+        .label {
+            font-weight: 600; /* Semi-bold labels */
+            color: #1f2937; /* Dark text for labels */
+            margin-bottom: 0.5rem;
+            display: block; /* Ensure labels are block elements */
+        }
+        .submit-button {
+            background-color: #2563eb; /* Blue button */
+            color: white;
+            padding: 0.8rem 1.5rem; /* Generous padding */
+            border-radius: 0.75rem; /* Rounded button */
+            font-weight: 700; /* Bold text */
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 100%; /* Full width button */
+        }
+        .submit-button:hover {
+            background-color: #1d4ed8; /* Darker blue on hover */
+            transform: translateY(-1px); /* Slight lift on hover */
+        }
+        .submit-button:active {
+            transform: translateY(0); /* Press effect */
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-8 text-center">T-Shirt Size Order Form</h2>
+
+        <form id="tShirtOrderForm" class="space-y-6">
+            <!-- Member ID / Name Input (Optional but good practice) -->
+            <div>
+                <label for="memberId" class="label">Member ID / Name:</label>
+                <input type="text" id="memberId" name="memberId" class="input-field" placeholder="Enter your member ID or name" required>
+            </div>
+
+            <!-- T-Shirt Size for Paid Members -->
+            <div>
+                <label for="paidMemberSize" class="label">Your T-Shirt Size (for paid members):</label>
+                <select id="paidMemberSize" name="paidMemberSize" class="input-field" required>
+                    <option value="">Select your size</option>
+                    <option value="XS">XS</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="XXL">XXL</option>
+                </select>
+            </div>
+
+            <!-- Additional T-Shirts -->
+            <div class="border-t border-gray-200 pt-6 mt-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Order Additional T-Shirts</h3>
+                <div class="flex items-center justify-between mb-4">
+                    <label for="additionalTshirts" class="label mb-0">Quantity (Each Rs 1000):</label>
+                    <input type="number" id="additionalTshirts" name="additionalTshirts" min="0" value="0" class="input-field w-24 text-center" required>
+                </div>
+                <p class="text-lg font-bold text-gray-700">
+                    Total for Additional T-shirts: <span id="totalAmount" class="text-green-600">Rs 0</span>
+                </p>
+            </div>
+
+            <!-- Payment Screenshot Upload -->
+            <div>
+                <label for="paymentScreenshot" class="label">Upload Payment Screenshot (for additional orders):</label>
+                <input type="file" id="paymentScreenshot" name="paymentScreenshot" accept="image/*" class="input-field p-2 bg-gray-50">
+                <p class="text-sm text-gray-500 mt-2">Accepted formats: JPG, PNG, GIF</p>
+            </div>
+
+            <!-- Submit Button -->
+            <div>
+                <button type="submit" class="submit-button">Submit Order</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Get references to the input and display elements
+        const additionalTshirtsInput = document.getElementById('additionalTshirts');
+        const totalAmountSpan = document.getElementById('totalAmount');
+        const tShirtOrderForm = document.getElementById('tShirtOrderForm');
+
+        const pricePerTshirt = 1000; // Price per additional T-shirt in Rs
+
+        /**
+         * Calculates and updates the total amount for additional T-shirts.
+         */
+        function updateTotalAmount() {
+            // Get the value from the input field, convert to a number, default to 0 if not a valid number
+            const quantity = parseInt(additionalTshirtsInput.value) || 0;
+            // Ensure quantity is not negative
+            const safeQuantity = Math.max(0, quantity);
+
+            // Calculate the total amount
+            const total = safeQuantity * pricePerTshirt;
+
+            // Update the text content of the total amount span
+            totalAmountSpan.textContent = `Rs ${total}`;
+        }
+
+        // Add an event listener to the quantity input field
+        // 'input' event fires whenever the value of the input changes
+        additionalTshirtsInput.addEventListener('input', updateTotalAmount);
+
+        // Call the function once when the page loads to set the initial total (which is 0)
+        window.onload = updateTotalAmount;
+
+        // Handle form submission (for demonstration purposes)
+        tShirtOrderForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission behavior
+
+            const memberId = document.getElementById('memberId').value;
+            const paidMemberSize = document.getElementById('paidMemberSize').value;
+            const additionalTshirts = parseInt(document.getElementById('additionalTshirts').value) || 0;
+            const paymentScreenshot = document.getElementById('paymentScreenshot').files[0];
+
+            let message = `Order Summary:\n`;
+            message += `Member ID/Name: ${memberId}\n`;
+            message += `Your T-Shirt Size: ${paidMemberSize}\n`;
+            message += `Additional T-Shirts Ordered: ${additionalTshirts}\n`;
+            message += `Total for Additional T-shirts: ${totalAmountSpan.textContent}\n`;
+
+            if (paymentScreenshot) {
+                message += `Payment Screenshot: ${paymentScreenshot.name} (${(paymentScreenshot.size / 1024).toFixed(2)} KB)\n`;
+            } else if (additionalTshirts > 0) {
+                 message += `Payment Screenshot: (No screenshot uploaded for additional order)\n`;
+            }
+
+            // Instead of alert(), we will use a simple console log for demonstration
+            // In a real application, you would send this data to a server.
+            console.log(message);
+            
+            // You can replace this with a custom modal or message display for user feedback
+            // For now, a simple browser confirmation for simulation
+            const confirmationMessage = `Thank you for your order!\n\n${message}\n\nThis data would typically be sent to a server.`;
+            alert(confirmationMessage); // Using alert only for this mock confirmation as per the original prompt requirement for a confirmation. In general, custom modals are preferred.
+
+            // Reset the form after submission
+            tShirtOrderForm.reset();
+            updateTotalAmount(); // Reset total amount display
+        });
+    </script>
+</body>
+</html>
