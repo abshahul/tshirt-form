@@ -103,42 +103,16 @@
             display: block; /* Ensure it's a block element for margin: auto to work */
             object-fit: contain; /* Ensures the image fits within bounds without cropping */
         }
-        /* Message box styles */
-        .message-box {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #fefcbf; /* Light yellow for info */
-            color: #856404; /* Dark yellow text */
-            padding: 1rem 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            display: none; /* Hidden by default */
-            font-weight: 600;
-            text-align: center;
-        }
-        .message-box.success {
-            background-color: #d4edda; /* Light green for success */
-            color: #155724; /* Dark green text */
-        }
-        .message-box.error {
-            background-color: #f8d7da; /* Light red for error */
-            color: #721c24; /* Dark red text */
-        }
-        .message-box.loading {
-            background-color: #e0f7fa; /* Light blue for loading */
-            color: #006064; /* Dark teal text */
-        }
     </style>
 </head>
 <body>
     <div class="form-container">
         <h2 class="text-3xl font-extrabold text-gray-900 mb-8 text-center">T-Shirt & Bottle Order Form</h2>
 
-        <form id="tShirtOrderForm" class="space-y-6">
-            <!-- Member ID / Name Input (Optional but good practice) -->
+        <!-- IMPORTANT: Replace 'YOUR_FORMSPREE_ENDPOINT_ID' with your actual Formspree endpoint -->
+        <!-- Example: action="https://formspree.io/f/your_form_id" -->
+        <form id="tShirtOrderForm" action="https://formspree.io/f/mvgrwdoj" method="POST" class="space-y-6">
+            <!-- Member ID / Name Input -->
             <div>
                 <label for="memberId" class="label">Member ID / Name:</label>
                 <input type="text" id="memberId" name="memberId" class="input-field" placeholder="Enter your member ID or name" required>
@@ -227,8 +201,10 @@
                 <!-- Payment Screenshot Upload -->
                 <div>
                     <label for="paymentScreenshot" class="label">Upload Payment Screenshot (for additional orders):</label>
+                    <!-- Formspree's free tier collects filename, not the file content directly. -->
+                    <!-- For actual file uploads, refer to Formspree's documentation on paid plans or integrations. -->
                     <input type="file" id="paymentScreenshot" name="paymentScreenshot" accept="image/*" class="input-field p-2 bg-gray-50">
-                    <p class="text-sm text-gray-500 mt-2">Accepted formats: JPG, PNG, GIF</p>
+                    <p class="text-sm text-gray-500 mt-2">Accepted formats: JPG, PNG, GIF (Only filename will be captured by Formspree's free tier)</p>
                 </div>
             </div>
 
@@ -239,14 +215,7 @@
         </form>
     </div>
 
-    <!-- Message Box for Feedback -->
-    <div id="messageBox" class="message-box"></div>
-
     <script>
-        // *** IMPORTANT: Replace this with your Google Apps Script Web App URL ***
-        // Follow the instructions provided after this HTML code to get your URL.
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzUJvMWyDC3YMvFYMYFCf4zZ6HS7KnKqAXmFbsW9SJZq6RHGHekxfNptrsGC7Teip7W5A/exec';
-
         // Get references to the input and display elements
         const numAdditionalTshirtsInput = document.getElementById('numAdditionalTshirts');
         const additionalTshirtSizesContainer = document.getElementById('additionalTshirtSizesContainer');
@@ -258,29 +227,11 @@
         const grandTotalAmountSpan = document.getElementById('grandTotalAmount');
         const upiIdElement = document.querySelector('.upi-id');
         const tShirtOrderForm = document.getElementById('tShirtOrderForm');
-        const messageBox = document.getElementById('messageBox'); // Reference to the message box
 
         const pricePerTshirt = 500;
         const pricePerBottle = 400;
         const sizes = ["S", "M", "L", "XL", "2XL", "3XL"];
         const sizeChartUrl = "https://abshahul.github.io/tshirt-form/sizechart.jpg";
-
-        /**
-         * Displays a message in the message box.
-         * @param {string} message - The text message to display.
-         * @param {string} type - 'success', 'error', 'loading', or 'info'.
-         */
-        function showMessage(message, type = 'info') {
-            messageBox.textContent = message;
-            messageBox.className = `message-box ${type}`; // Apply type class
-            messageBox.style.display = 'block'; // Show the message box
-
-            if (type !== 'loading') {
-                setTimeout(() => {
-                    messageBox.style.display = 'none'; // Hide after a few seconds
-                }, 4000);
-            }
-        }
 
         /**
          * Creates a size selection dropdown for an additional T-shirt.
@@ -306,7 +257,9 @@
 
             const select = document.createElement('select');
             select.id = `additionalSize_${index}`;
-            select.name = `additionalSize_${index}`;
+            // IMPORTANT: Assign a unique name for each dynamic select for Formspree
+            // Formspree will capture these as 'additionalSize_1', 'additionalSize_2', etc.
+            select.name = `additionalSize_${index}`; 
             select.className = 'input-field';
             select.required = true;
 
@@ -361,11 +314,24 @@
          * Calculates and updates the grand total of T-shirts and Bottles.
          */
         function updateGrandTotal() {
+            // Retrieve current values, ensuring they are numbers
             const tshirtTotal = parseInt(totalTshirtAmountSpan.textContent.replace('Rs ', '')) || 0;
             const bottleTotal = parseInt(totalBottleAmountSpan.textContent.replace('Rs ', '')) || 0;
             
             const grandTotal = tshirtTotal + bottleTotal;
             grandTotalAmountSpan.textContent = `Rs ${grandTotal}`;
+            
+            // For Formspree, we need to add the grand total to the form data
+            // This requires a hidden input as the JavaScript doesn't handle the POST
+            let grandTotalInput = document.getElementById('grandTotalInput');
+            if (!grandTotalInput) {
+                grandTotalInput = document.createElement('input');
+                grandTotalInput.type = 'hidden';
+                grandTotalInput.id = 'grandTotalInput';
+                grandTotalInput.name = 'Grand Total Amount'; // Name for Formspree
+                tShirtOrderForm.appendChild(grandTotalInput);
+            }
+            grandTotalInput.value = `Rs ${grandTotal}`;
         }
 
         /**
@@ -379,9 +345,10 @@
             textarea.select();
             try {
                 document.execCommand('copy');
-                showMessage('UPI ID Copied!', 'success');
+                // Removed custom message box for simplicity with Formspree redirect
+                alert('UPI ID Copied!'); // Using alert as fallback for quick feedback
             } catch (err) {
-                showMessage('Failed to copy UPI ID.', 'error');
+                alert('Failed to copy UPI ID.'); // Using alert as fallback for quick feedback
                 console.error('Failed to copy UPI ID: ', err);
             }
             document.body.removeChild(textarea);
@@ -399,80 +366,33 @@
             updateGrandTotal(); 
         };
 
-        // Handle form submission
-        tShirtOrderForm.addEventListener('submit', async function(event) {
-            event.preventDefault(); // Prevent default form submission
+        // For Formspree, the form submission is handled directly by the browser
+        // We no longer preventDefault and send a fetch request here.
+        // The names of the input fields will be picked up by Formspree.
 
-            showMessage('Submitting order...', 'loading');
+        // Also, add hidden inputs for calculated totals if you want them in the submission
+        // We'll update the grandTotalInput directly in updateGrandTotal
+        // Add hidden inputs for totalTshirtAmount and totalBottleAmount as well
+        let totalTshirtAmountInput = document.createElement('input');
+        totalTshirtAmountInput.type = 'hidden';
+        totalTshirtAmountInput.name = 'Total for Additional T-shirts';
+        totalTshirtAmountInput.id = 'totalTshirtAmountInput';
+        tShirtOrderForm.appendChild(totalTshirtAmountInput);
 
-            const memberId = document.getElementById('memberId').value;
-            const memberEmail = document.getElementById('memberEmail').value;
-            const paidMemberSize = document.getElementById('paidMemberSize').value;
-            const numAdditionalTshirts = parseInt(document.getElementById('numAdditionalTshirts').value) || 0;
-            const numCustomBottles = parseInt(document.getElementById('numCustomBottles').value) || 0;
-            const paymentScreenshotFile = document.getElementById('paymentScreenshot').files[0];
-            const paymentScreenshotFilename = paymentScreenshotFile ? paymentScreenshotFile.name : 'No file uploaded';
+        let totalBottleAmountInput = document.createElement('input');
+        totalBottleAmountInput.type = 'hidden';
+        totalBottleAmountInput.name = 'Total for Custom Bottles';
+        totalBottleAmountInput.id = 'totalBottleAmountInput';
+        tShirtOrderForm.appendChild(totalBottleAmountInput);
 
-            const additionalSizes = [];
-            for (let i = 1; i <= numAdditionalTshirts; i++) {
-                const selectElement = document.getElementById(`additionalSize_${i}`);
-                if (selectElement) {
-                    additionalSizes.push(selectElement.value);
-                }
-            }
-
-            const formData = {
-                memberId: memberId,
-                memberEmail: memberEmail,
-                paidMemberSize: paidMemberSize,
-                numAdditionalTshirts: numAdditionalTshirts,
-                additionalTshirtSizes: additionalSizes, // Send as array, Apps Script will join it
-                totalTshirtAmount: totalTshirtAmountSpan.textContent,
-                numCustomBottles: numCustomBottles,
-                totalBottleAmount: totalBottleAmountSpan.textContent,
-                grandTotalAmount: grandTotalAmountSpan.textContent,
-                paymentScreenshotFilename: paymentScreenshotFilename
-                // Note: For actual file upload to Google Drive, more complex logic is needed
-                // involving Base64 encoding the file and handling it in Apps Script.
-                // This current setup only sends the filename.
-            };
-
-            try {
-                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors', // Ensure CORS is handled correctly by Apps Script
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData),
-                });
-
-                // Check if the response itself indicates an HTTP error (e.g., 404, 500)
-                if (!response.ok) {
-                    const errorText = await response.text(); // Get response body as text
-                    console.error('HTTP Error:', response.status, response.statusText, errorText);
-                    showMessage(`Submission failed: Server responded with ${response.status} ${response.statusText}`, 'error');
-                    return; // Stop further processing
-                }
-
-                const result = await response.json(); // Attempt to parse JSON
-
-                if (result.status === 'success') {
-                    showMessage('Order submitted successfully!', 'success');
-                    tShirtOrderForm.reset(); // Reset form fields
-                    updateTshirtOrderFields(); // Reset dynamic fields and totals
-                    updateBottleOrderFields();
-                } else {
-                    // Apps Script might return a success HTTP status but with a custom error status in JSON
-                    showMessage('Submission failed: ' + (result.message || 'Unknown error'), 'error');
-                    console.error('Apps Script reported an error:', result.message);
-                }
-            } catch (error) {
-                // This catch handles network errors or issues with parsing the response as JSON
-                showMessage('An error occurred during submission. Please check your internet and console.', 'error');
-                console.error('Network or parsing error during submission:', error);
-            }
+        // Update these hidden inputs when totals change
+        totalTshirtAmountSpan.addEventListener('DOMSubtreeModified', () => {
+            totalTshirtAmountInput.value = totalTshirtAmountSpan.textContent;
         });
+        totalBottleAmountSpan.addEventListener('DOMSubtreeModified', () => {
+            totalBottleAmountInput.value = totalBottleAmountSpan.textContent;
+        });
+
     </script>
 </body>
 </html>
