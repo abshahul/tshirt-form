@@ -84,6 +84,13 @@
                 <input type="text" id="memberId" name="memberId" class="input-field" placeholder="Enter your member ID or name" required>
             </div>
 
+            <!-- Email Input -->
+            <div>
+                <label for="memberEmail" class="label">Email Address:</label>
+                <input type="email" id="memberEmail" name="memberEmail" class="input-field" placeholder="Enter your email" required>
+                <p class="text-sm text-gray-500 mt-2">Please use the same email address you used to register for the reunion.</p>
+            </div>
+
             <!-- T-Shirt Size for Paid Members -->
             <div>
                 <label for="paidMemberSize" class="label">Your T-Shirt Size (for paid members):</label>
@@ -131,6 +138,14 @@
                 </p>
             </div>
 
+            <!-- Grand Total Section (New) -->
+            <div class="border-t border-gray-200 pt-6 mt-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Order Summary</h3>
+                <p class="text-2xl font-extrabold text-blue-700">
+                    Grand Total: <span id="grandTotalAmount">Rs 0</span>
+                </p>
+            </div>
+
             <!-- Payment Screenshot Upload -->
             <div>
                 <label for="paymentScreenshot" class="label">Upload Payment Screenshot (for additional orders):</label>
@@ -149,10 +164,12 @@
         // Get references to the input and display elements
         const numAdditionalTshirtsInput = document.getElementById('numAdditionalTshirts');
         const additionalTshirtSizesContainer = document.getElementById('additionalTshirtSizesContainer');
-        const totalTshirtAmountSpan = document.getElementById('totalTshirtAmount'); // Renamed
+        const totalTshirtAmountSpan = document.getElementById('totalTshirtAmount');
         
-        const numCustomBottlesInput = document.getElementById('numCustomBottles'); // New
-        const totalBottleAmountSpan = document.getElementById('totalBottleAmount'); // New
+        const numCustomBottlesInput = document.getElementById('numCustomBottles');
+        const totalBottleAmountSpan = document.getElementById('totalBottleAmount');
+        
+        const grandTotalAmountSpan = document.getElementById('grandTotalAmount'); // New element for Grand Total
 
         const tShirtOrderForm = document.getElementById('tShirtOrderForm');
 
@@ -213,6 +230,7 @@
 
             const total = safeQuantity * pricePerTshirt;
             totalTshirtAmountSpan.textContent = `Rs ${total}`;
+            updateGrandTotal(); // Call to update grand total
         }
 
         /**
@@ -224,7 +242,19 @@
 
             const total = safeQuantity * pricePerBottle;
             totalBottleAmountSpan.textContent = `Rs ${total}`;
+            updateGrandTotal(); // Call to update grand total
         }
+
+        /**
+         * Calculates and updates the grand total of T-shirts and Bottles.
+         */
+        function updateGrandTotal() {
+            const tshirtTotal = parseInt(totalTshirtAmountSpan.textContent.replace('Rs ', '')) || 0;
+            const bottleTotal = parseInt(totalBottleAmountSpan.textContent.replace('Rs ', '')) || 0;
+            const grandTotal = tshirtTotal + bottleTotal;
+            grandTotalAmountSpan.textContent = `Rs ${grandTotal}`;
+        }
+
 
         // Add event listeners to quantity input fields
         numAdditionalTshirtsInput.addEventListener('input', updateTshirtOrderFields);
@@ -234,6 +264,8 @@
         window.onload = function() {
             updateTshirtOrderFields();
             updateBottleOrderFields();
+            // Initial call to update grand total after both individual totals are set
+            updateGrandTotal(); 
         };
 
         // Handle form submission (for demonstration purposes)
@@ -241,13 +273,15 @@
             event.preventDefault(); // Prevent the default form submission behavior
 
             const memberId = document.getElementById('memberId').value;
+            const memberEmail = document.getElementById('memberEmail').value;
             const paidMemberSize = document.getElementById('paidMemberSize').value;
             const numAdditionalTshirts = parseInt(document.getElementById('numAdditionalTshirts').value) || 0;
-            const numCustomBottles = parseInt(document.getElementById('numCustomBottles').value) || 0; // New
+            const numCustomBottles = parseInt(document.getElementById('numCustomBottles').value) || 0;
             const paymentScreenshot = document.getElementById('paymentScreenshot').files[0];
 
             let message = `Order Summary:\n`;
             message += `Member ID/Name: ${memberId}\n`;
+            message += `Email Address: ${memberEmail}\n`;
             message += `Your T-Shirt Size: ${paidMemberSize}\n`;
             
             // T-Shirt details
@@ -270,6 +304,10 @@
             message += `Number of Custom Bottles Ordered: ${numCustomBottles}\n`;
             message += `Total for Custom Bottles: ${totalBottleAmountSpan.textContent}\n`;
 
+            // Grand Total
+            message += `\n--- Grand Total ---\n`;
+            message += `Grand Total Amount: ${grandTotalAmountSpan.textContent}\n`; // Add Grand Total to message
+
 
             if (paymentScreenshot) {
                 message += `\nPayment Screenshot: ${paymentScreenshot.name} (${(paymentScreenshot.size / 1024).toFixed(2)} KB)\n`;
@@ -283,13 +321,14 @@
 
             // You can replace this with a custom modal or message display for user feedback
             const confirmationMessage = `Thank you for your order!\n\n${message}\n\nThis data would typically be sent to a server.`;
-            alert(confirmationMessage); // Using alert only for this mock confirmation as per the original prompt requirement for a confirmation. In general, custom modals are preferred.
+            alert(confirmationMessage);
 
 
             // Reset the form after submission
             tShirtOrderForm.reset();
-            updateTshirtOrderFields(); // Reset T-shirt fields
-            updateBottleOrderFields(); // Reset bottle fields
+            updateTshirtOrderFields(); // Reset T-shirt fields and updates grand total
+            updateBottleOrderFields(); // Reset bottle fields and updates grand total
+            // No separate call for updateGrandTotal needed here as it's called by individual updates.
         });
     </script>
 </body>
