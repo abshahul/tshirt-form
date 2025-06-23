@@ -103,6 +103,34 @@
             display: block; /* Ensure it's a block element for margin: auto to work */
             object-fit: contain; /* Ensures the image fits within bounds without cropping */
         }
+        /* Message box styles */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fefcbf; /* Light yellow for info */
+            color: #856404; /* Dark yellow text */
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            font-weight: 600;
+            text-align: center;
+        }
+        .message-box.success {
+            background-color: #d4edda; /* Light green for success */
+            color: #155724; /* Dark green text */
+        }
+        .message-box.error {
+            background-color: #f8d7da; /* Light red for error */
+            color: #721c24; /* Dark red text */
+        }
+        .message-box.loading {
+            background-color: #e0f7fa; /* Light blue for loading */
+            color: #006064; /* Dark teal text */
+        }
     </style>
 </head>
 <body>
@@ -211,7 +239,14 @@
         </form>
     </div>
 
+    <!-- Message Box for Feedback -->
+    <div id="messageBox" class="message-box"></div>
+
     <script>
+        // *** IMPORTANT: Replace this with your Google Apps Script Web App URL ***
+        // Follow the instructions provided after this HTML code to get your URL.
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0TRo4ElLqQbdA4D6RKzR9GBR5H4Dvh4naeqvAZAtIj0YtVQOCHtOkizhVTmEKjXHqfw/exec';
+
         // Get references to the input and display elements
         const numAdditionalTshirtsInput = document.getElementById('numAdditionalTshirts');
         const additionalTshirtSizesContainer = document.getElementById('additionalTshirtSizesContainer');
@@ -221,24 +256,40 @@
         const totalBottleAmountSpan = document.getElementById('totalBottleAmount');
         
         const grandTotalAmountSpan = document.getElementById('grandTotalAmount');
-        const upiIdElement = document.querySelector('.upi-id'); // Get the UPI ID element
-
+        const upiIdElement = document.querySelector('.upi-id');
         const tShirtOrderForm = document.getElementById('tShirtOrderForm');
+        const messageBox = document.getElementById('messageBox'); // Reference to the message box
 
-        const pricePerTshirt = 500; // Price per additional T-shirt in Rs
-        const pricePerBottle = 400; // Price per custom bottle in Rs
-        // Updated sizes array
-        const sizes = ["S", "M", "L", "XL", "2XL", "3XL"]; // Available sizes
-        const sizeChartUrl = "https://abshahul.github.io/tshirt-form/sizechart.jpg"; // URL for the size chart
+        const pricePerTshirt = 500;
+        const pricePerBottle = 400;
+        const sizes = ["S", "M", "L", "XL", "2XL", "3XL"];
+        const sizeChartUrl = "https://abshahul.github.io/tshirt-form/sizechart.jpg";
+
+        /**
+         * Displays a message in the message box.
+         * @param {string} message - The text message to display.
+         * @param {string} type - 'success', 'error', 'loading', or 'info'.
+         */
+        function showMessage(message, type = 'info') {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`; // Apply type class
+            messageBox.style.display = 'block'; // Show the message box
+
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    messageBox.style.display = 'none'; // Hide after a few seconds
+                }, 4000);
+            }
+        }
 
         /**
          * Creates a size selection dropdown for an additional T-shirt.
-         * @param {number} index - The index of the additional T-shirt (e.g., 1st, 2nd, etc.).
+         * @param {number} index - The index of the additional T-shirt.
          * @returns {HTMLElement} The div element containing the label and select dropdown.
          */
         function createAdditionalSizeDropdown(index) {
             const div = document.createElement('div');
-            div.className = 'additional-size-item'; // Class for styling dynamically added items
+            div.className = 'additional-size-item';
 
             const label = document.createElement('label');
             label.htmlFor = `additionalSize_${index}`;
@@ -246,7 +297,6 @@
             label.textContent = `Size for Additional T-Shirt #${index}:`;
             div.appendChild(label);
 
-            // Add the size chart link next to the label for dynamic fields
             const sizeChartLink = document.createElement('a');
             sizeChartLink.href = sizeChartUrl;
             sizeChartLink.target = "_blank";
@@ -254,19 +304,17 @@
             sizeChartLink.textContent = "Size Chart";
             label.appendChild(sizeChartLink);
 
-
             const select = document.createElement('select');
             select.id = `additionalSize_${index}`;
             select.name = `additionalSize_${index}`;
             select.className = 'input-field';
-            select.required = true; // Make size selection required for each additional shirt
+            select.required = true;
 
             const defaultOption = document.createElement('option');
             defaultOption.value = '';
             defaultOption.textContent = 'Select a size';
             select.appendChild(defaultOption);
 
-            // Populate options from the updated sizes array
             sizes.forEach(size => {
                 const option = document.createElement('option');
                 option.value = size;
@@ -285,7 +333,7 @@
             const quantity = parseInt(numAdditionalTshirtsInput.value) || 0;
             const safeQuantity = Math.max(0, quantity);
 
-            additionalTshirtSizesContainer.innerHTML = ''; // Clear existing dropdowns
+            additionalTshirtSizesContainer.innerHTML = '';
 
             for (let i = 1; i <= safeQuantity; i++) {
                 const dropdown = createAdditionalSizeDropdown(i);
@@ -294,7 +342,7 @@
 
             const total = safeQuantity * pricePerTshirt;
             totalTshirtAmountSpan.textContent = `Rs ${total}`;
-            updateGrandTotal(); // Call to update grand total
+            updateGrandTotal();
         }
 
         /**
@@ -306,14 +354,13 @@
 
             const total = safeQuantity * pricePerBottle;
             totalBottleAmountSpan.textContent = `Rs ${total}`;
-            updateGrandTotal(); // Call to update grand total
+            updateGrandTotal();
         }
 
         /**
          * Calculates and updates the grand total of T-shirts and Bottles.
          */
         function updateGrandTotal() {
-            // Parse the current total amounts from their text content
             const tshirtTotal = parseInt(totalTshirtAmountSpan.textContent.replace('Rs ', '')) || 0;
             const bottleTotal = parseInt(totalBottleAmountSpan.textContent.replace('Rs ', '')) || 0;
             
@@ -326,93 +373,94 @@
          */
         function copyUpiId() {
             const upiId = upiIdElement.textContent;
-            // Use document.execCommand('copy') for better iframe compatibility
             const textarea = document.createElement('textarea');
             textarea.value = upiId;
             document.body.appendChild(textarea);
             textarea.select();
             try {
                 document.execCommand('copy');
-                // You could add a small visual feedback here, e.g., a temporary "Copied!" message
-                console.log('UPI ID copied to clipboard:', upiId);
+                showMessage('UPI ID Copied!', 'success');
             } catch (err) {
+                showMessage('Failed to copy UPI ID.', 'error');
                 console.error('Failed to copy UPI ID: ', err);
             }
             document.body.removeChild(textarea);
         }
 
-        // Add event listeners to quantity input fields
+        // Add event listeners
         numAdditionalTshirtsInput.addEventListener('input', updateTshirtOrderFields);
         numCustomBottlesInput.addEventListener('input', updateBottleOrderFields);
-        upiIdElement.addEventListener('click', copyUpiId); // Add click listener to copy UPI ID
+        upiIdElement.addEventListener('click', copyUpiId);
 
-        // Call the functions once when the page loads to set the initial state
+        // Initial setup on page load
         window.onload = function() {
             updateTshirtOrderFields();
             updateBottleOrderFields();
             updateGrandTotal(); 
         };
 
-        // Handle form submission (for demonstration purposes)
-        tShirtOrderForm.addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent the default form submission behavior
+        // Handle form submission
+        tShirtOrderForm.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            showMessage('Submitting order...', 'loading');
 
             const memberId = document.getElementById('memberId').value;
             const memberEmail = document.getElementById('memberEmail').value;
             const paidMemberSize = document.getElementById('paidMemberSize').value;
             const numAdditionalTshirts = parseInt(document.getElementById('numAdditionalTshirts').value) || 0;
             const numCustomBottles = parseInt(document.getElementById('numCustomBottles').value) || 0;
-            const paymentScreenshot = document.getElementById('paymentScreenshot').files[0];
+            const paymentScreenshotFile = document.getElementById('paymentScreenshot').files[0];
+            const paymentScreenshotFilename = paymentScreenshotFile ? paymentScreenshotFile.name : 'No file uploaded';
 
-            let message = `Order Summary:\n`;
-            message += `Member ID/Name: ${memberId}\n`;
-            message += `Email Address: ${memberEmail}\n`;
-            message += `Your T-Shirt Size: ${paidMemberSize}\n`;
-            
-            // T-Shirt details
-            message += `\n--- Additional T-Shirts ---\n`;
-            message += `Number of Additional T-Shirts Ordered: ${numAdditionalTshirts}\n`;
             const additionalSizes = [];
             for (let i = 1; i <= numAdditionalTshirts; i++) {
                 const selectElement = document.getElementById(`additionalSize_${i}`);
                 if (selectElement) {
-                    additionalSizes.push(`T-Shirt #${i} Size: ${selectElement.value}`);
+                    additionalSizes.push(selectElement.value);
                 }
             }
-            if (additionalSizes.length > 0) {
-                message += `Additional T-Shirt Sizes:\n${additionalSizes.join('\n')}\n`;
+
+            const formData = {
+                memberId: memberId,
+                memberEmail: memberEmail,
+                paidMemberSize: paidMemberSize,
+                numAdditionalTshirts: numAdditionalTshirts,
+                additionalTshirtSizes: additionalSizes, // Send as array, Apps Script will join it
+                totalTshirtAmount: totalTshirtAmountSpan.textContent,
+                numCustomBottles: numCustomBottles,
+                totalBottleAmount: totalBottleAmountSpan.textContent,
+                grandTotalAmount: grandTotalAmountSpan.textContent,
+                paymentScreenshotFilename: paymentScreenshotFilename
+                // Note: For actual file upload to Google Drive, more complex logic is needed
+                // involving Base64 encoding the file and handling it in Apps Script.
+                // This current setup only sends the filename.
+            };
+
+            try {
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors', // Ensure CORS is handled correctly by Apps Script
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showMessage('Order submitted successfully!', 'success');
+                    tShirtOrderForm.reset(); // Reset form fields
+                    updateTshirtOrderFields(); // Reset dynamic fields and totals
+                    updateBottleOrderFields();
+                } else {
+                    showMessage('Submission failed: ' + (result.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showMessage('An error occurred during submission. Please try again.', 'error');
+                console.error('Submission error:', error);
             }
-            message += `Total for Additional T-shirts: ${totalTshirtAmountSpan.textContent}\n`;
-
-            // Bottle details
-            message += `\n--- Custom Bottles ---\n`;
-            message += `Number of Custom Bottles Ordered: ${numCustomBottles}\n`;
-            message += `Total for Custom Bottles: ${totalBottleAmountSpan.textContent}\n`;
-
-            // Grand Total
-            message += `\n--- Grand Total ---\n`;
-            message += `Grand Total Amount: ${grandTotalAmountSpan.textContent}\n`;
-
-
-            if (paymentScreenshot) {
-                message += `\nPayment Screenshot: ${paymentScreenshot.name} (${(paymentScreenshot.size / 1024).toFixed(2)} KB)\n`;
-            } else if (numAdditionalTshirts > 0 || numCustomBottles > 0) {
-                 message += `\nPayment Screenshot: (No screenshot uploaded for additional order, if applicable)\n`;
-            }
-
-            // Instead of alert(), we will use a simple console log for demonstration
-            // In a real application, you would send this data to a server.
-            console.log(message);
-
-            // You can replace this with a custom modal or message display for user feedback
-            const confirmationMessage = `Thank you for your order!\n\n${message}\n\nThis data would typically be sent to a server.`;
-            alert(confirmationMessage);
-
-
-            // Reset the form after submission
-            tShirtOrderForm.reset();
-            updateTshirtOrderFields(); // Reset T-shirt fields and updates grand total
-            updateBottleOrderFields(); // Reset bottle fields and updates grand total
         });
     </script>
 </body>
