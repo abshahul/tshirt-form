@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>T-Shirt Order Form</title>
+    <title>T-Shirt & Bottle Order Form</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -75,7 +75,7 @@
 </head>
 <body>
     <div class="form-container">
-        <h2 class="text-3xl font-extrabold text-gray-900 mb-8 text-center">T-Shirt Size Order Form</h2>
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-8 text-center">T-Shirt & Bottle Order Form</h2>
 
         <form id="tShirtOrderForm" class="space-y-6">
             <!-- Member ID / Name Input (Optional but good practice) -->
@@ -112,7 +112,22 @@
                 </div>
 
                 <p class="text-lg font-bold text-gray-700 mt-6">
-                    Total for Additional T-shirts: <span id="totalAmount" class="text-green-600">Rs 0</span>
+                    Total for Additional T-shirts: <span id="totalTshirtAmount" class="text-green-600">Rs 0</span>
+                    <span class="text-sm text-gray-500">(Each Rs 500)</span>
+                </p>
+            </div>
+
+            <!-- Custom Bottles Section -->
+            <div class="border-t border-gray-200 pt-6 mt-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Order Custom Bottles</h3>
+                <div class="flex items-center justify-between mb-4">
+                    <label for="numCustomBottles" class="label mb-0">Number of Custom Bottles:</label>
+                    <input type="number" id="numCustomBottles" name="numCustomBottles" min="0" value="0" class="input-field w-24 text-center" required>
+                </div>
+
+                <p class="text-lg font-bold text-gray-700 mt-6">
+                    Total for Custom Bottles: <span id="totalBottleAmount" class="text-green-600">Rs 0</span>
+                    <span class="text-sm text-gray-500">(Each Rs 400)</span>
                 </p>
             </div>
 
@@ -134,10 +149,15 @@
         // Get references to the input and display elements
         const numAdditionalTshirtsInput = document.getElementById('numAdditionalTshirts');
         const additionalTshirtSizesContainer = document.getElementById('additionalTshirtSizesContainer');
-        const totalAmountSpan = document.getElementById('totalAmount');
+        const totalTshirtAmountSpan = document.getElementById('totalTshirtAmount'); // Renamed
+        
+        const numCustomBottlesInput = document.getElementById('numCustomBottles'); // New
+        const totalBottleAmountSpan = document.getElementById('totalBottleAmount'); // New
+
         const tShirtOrderForm = document.getElementById('tShirtOrderForm');
 
-        const pricePerTshirt = 1000; // Price per additional T-shirt in Rs
+        const pricePerTshirt = 500; // Price per additional T-shirt in Rs
+        const pricePerBottle = 400; // Price per custom bottle in Rs
         const sizes = ["XS", "S", "M", "L", "XL", "XXL"]; // Available sizes
 
         /**
@@ -178,34 +198,43 @@
         }
 
         /**
-         * Dynamically generates the size selection fields and updates the total amount.
+         * Dynamically generates the T-shirt size selection fields and updates the T-shirt total amount.
          */
-        function updateAdditionalTshirtFields() {
-            // Get the value from the input field, convert to a number, default to 0 if not a valid number
+        function updateTshirtOrderFields() {
             const quantity = parseInt(numAdditionalTshirtsInput.value) || 0;
-            // Ensure quantity is not negative
             const safeQuantity = Math.max(0, quantity);
 
-            // Clear existing additional size dropdowns
-            additionalTshirtSizesContainer.innerHTML = '';
+            additionalTshirtSizesContainer.innerHTML = ''; // Clear existing dropdowns
 
-            // Generate new dropdowns based on the quantity
             for (let i = 1; i <= safeQuantity; i++) {
                 const dropdown = createAdditionalSizeDropdown(i);
                 additionalTshirtSizesContainer.appendChild(dropdown);
             }
 
-            // Update the total amount
             const total = safeQuantity * pricePerTshirt;
-            totalAmountSpan.textContent = `Rs ${total}`;
+            totalTshirtAmountSpan.textContent = `Rs ${total}`;
         }
 
-        // Add an event listener to the quantity input field
-        // 'input' event fires whenever the value of the input changes
-        numAdditionalTshirtsInput.addEventListener('input', updateAdditionalTshirtFields);
+        /**
+         * Calculates and updates the total amount for custom bottles.
+         */
+        function updateBottleOrderFields() {
+            const quantity = parseInt(numCustomBottlesInput.value) || 0;
+            const safeQuantity = Math.max(0, quantity);
 
-        // Call the function once when the page loads to set the initial state (which is 0 additional shirts)
-        window.onload = updateAdditionalTshirtFields;
+            const total = safeQuantity * pricePerBottle;
+            totalBottleAmountSpan.textContent = `Rs ${total}`;
+        }
+
+        // Add event listeners to quantity input fields
+        numAdditionalTshirtsInput.addEventListener('input', updateTshirtOrderFields);
+        numCustomBottlesInput.addEventListener('input', updateBottleOrderFields);
+
+        // Call the functions once when the page loads to set the initial state
+        window.onload = function() {
+            updateTshirtOrderFields();
+            updateBottleOrderFields();
+        };
 
         // Handle form submission (for demonstration purposes)
         tShirtOrderForm.addEventListener('submit', function(event) {
@@ -214,13 +243,16 @@
             const memberId = document.getElementById('memberId').value;
             const paidMemberSize = document.getElementById('paidMemberSize').value;
             const numAdditionalTshirts = parseInt(document.getElementById('numAdditionalTshirts').value) || 0;
+            const numCustomBottles = parseInt(document.getElementById('numCustomBottles').value) || 0; // New
             const paymentScreenshot = document.getElementById('paymentScreenshot').files[0];
 
             let message = `Order Summary:\n`;
             message += `Member ID/Name: ${memberId}\n`;
             message += `Your T-Shirt Size: ${paidMemberSize}\n`;
+            
+            // T-Shirt details
+            message += `\n--- Additional T-Shirts ---\n`;
             message += `Number of Additional T-Shirts Ordered: ${numAdditionalTshirts}\n`;
-
             const additionalSizes = [];
             for (let i = 1; i <= numAdditionalTshirts; i++) {
                 const selectElement = document.getElementById(`additionalSize_${i}`);
@@ -231,13 +263,18 @@
             if (additionalSizes.length > 0) {
                 message += `Additional T-Shirt Sizes:\n${additionalSizes.join('\n')}\n`;
             }
+            message += `Total for Additional T-shirts: ${totalTshirtAmountSpan.textContent}\n`;
 
-            message += `Total for Additional T-shirts: ${totalAmountSpan.textContent}\n`;
+            // Bottle details
+            message += `\n--- Custom Bottles ---\n`;
+            message += `Number of Custom Bottles Ordered: ${numCustomBottles}\n`;
+            message += `Total for Custom Bottles: ${totalBottleAmountSpan.textContent}\n`;
+
 
             if (paymentScreenshot) {
-                message += `Payment Screenshot: ${paymentScreenshot.name} (${(paymentScreenshot.size / 1024).toFixed(2)} KB)\n`;
-            } else if (numAdditionalTshirts > 0) {
-                 message += `Payment Screenshot: (No screenshot uploaded for additional order)\n`;
+                message += `\nPayment Screenshot: ${paymentScreenshot.name} (${(paymentScreenshot.size / 1024).toFixed(2)} KB)\n`;
+            } else if (numAdditionalTshirts > 0 || numCustomBottles > 0) {
+                 message += `\nPayment Screenshot: (No screenshot uploaded for additional order, if applicable)\n`;
             }
 
             // Instead of alert(), we will use a simple console log for demonstration
@@ -251,7 +288,8 @@
 
             // Reset the form after submission
             tShirtOrderForm.reset();
-            updateAdditionalTshirtFields(); // Reset total amount and clear dynamic fields
+            updateTshirtOrderFields(); // Reset T-shirt fields
+            updateBottleOrderFields(); // Reset bottle fields
         });
     </script>
 </body>
